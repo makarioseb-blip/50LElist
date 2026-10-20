@@ -45,12 +45,11 @@ table{border-collapse:collapse;width:100%}
 <h3>طباعة أوراق الأمر (تسجيل العربات / طاقم الماكينة)</h3>
 <label>رقم الأمر <input id="order" value="1/6029"></label>
 <label>الفئة <input id="denom" value="50 جنيه"></label>
-<label>رقم البداية (من الغلاف) <input id="start" value="8892480"></label>
-<label>إجمالي الأفرخ (حد أقصى 1,200,000) <input id="total" value="1200000"></label>
-<label>المطبوع سابقًا من السريال الأول <input id="used" type="number" min="0" max="277777" value="0"></label>
-<label>أول سريال <input id="first" value="495"></label>
-<label>تخطي مضاعفات <input id="step" value="100"></label>
-<label>الملف <select id="kind"><option value="carts">تسجيل العربات</option><option value="crew">طاقم الماكينة</option><option value="both">الاثنان</option></select></label>
+<label>الكمية المطلوبة من أول سريال <input id="first_qty" type="number" value="30850" min="1" max="277778" oninput="calc()"></label>
+<label>رقم البداية المحسوب <input id="start" value="" readonly style="background:#f0f4f8;font-weight:bold;"></label>
+<label>إجمالي الأفرخ (حد أقصى 1,200,000) <input id="total" value="1200000" oninput="calc()"></label>
+<label>أول سريال <input id="first" value="495" oninput="calc()"></label>
+<label>الملف <select id="kind" onchange="calc()"><option value="carts">تسجيل العربات</option><option value="crew">طاقم الماكينة</option><option value="both">الاثنان</option></select></label>
 <div><button onclick="calc()">حساب السريالات</button></div>
 <div id="err"></div><div id="codes"></div>
 <button id="pb" onclick="showPages()" style="display:none">عرض الأوراق</button>
@@ -58,26 +57,35 @@ table{border-collapse:collapse;width:100%}
 </div>
 <div id="out"></div>
 <script>
-const N=36,SS=Math.ceil(1e7/N),CS=1e4,CAP=1.2e6,STRIKE=SS*N-1e7+1;
+const N=36,SS=277778,CS=10000,CAP=1200000,STRIKE=277778*N-10000000+1;
 const $=id=>document.getElementById(id);
 const fmt=n=>{const s=String(n).padStart(7,'0');return s.length>7?n.toLocaleString('en-US'):s[0]+','+s.slice(1,4)+','+s.slice(4)};
+
+function deriveStartNumber(qtyNeeded){
+  if(qtyNeeded <= 0 || qtyNeeded > SS) throw 'الكمية المطلوبة من أول سريال يجب أن تكون بين 1 و 277,778 فرخ';
+  const usedSheets = SS - qtyNeeded;
+  const units = usedSheets * N;
+  const startNum = units + 3072;
+  return {usedSheets, startNum};
+}
+
 function firstSheet(s){
   if(s<CS)throw'رقم البداية غير صالح';
   const cn=CS*N,q=Math.floor((s-CS)/cn),rem=(s-CS)-q*cn;
   if(rem%(N-1))throw'رقم البداية لا يطابق نظام ترقيم العربات';
   const r=rem/(N-1);if(r>=CS)throw'رقم البداية غير صالح';
   const f=q*CS+r+1;if(f>SS)throw'رقم البداية خارج نطاق السريال';return f}
-function plan(start,total,first,step,used=0){
+
+function plan(start,total,first,step=100,used=0){
   if(!(total>=1))throw'الكمية غير صالحة';
-  if(total>CAP)throw'إجمالي الكمية ('+total.toLocaleString('en-US')+') يتجاوز الحد الأقصى 1,200,000 فرخ';
   let f=used>0?used+1:firstSheet(start),left=total,s=first,pages=[];
   if(used<0||used>=SS)throw'الكمية المطبوعة سابقًا يجب أن تكون بين 0 و277777 فرخ';
-  if(used>0 && start<CS)throw'أدخل رقم بداية السريال الصحيح من الغلاف';
   while(left>0){
     while(step>0&&s%step==0)s++;
     const n=Math.min(left,SS-f+1);
     pages.push({serial:s,first:f,last:f+n-1,qty:n});left-=n;f=1;s++}
   return pages}
+
 function carts(first,last){
   const o={};
   for(let c=1;c<=28;c++){
@@ -85,27 +93,35 @@ function carts(first,last){
     if(lo>hi)continue;
     const m=hi-lo+1,b=(lo-1)*N;o[c]={m,top:b+m,bottom:b+1+(N-1)*m}}
   return o}
+
 let pages=[];
 function calc(){
   $('err').textContent='';
   try{
-    pages=plan(+$('start').value.replace(/,/g,''),+$('total').value.replace(/,/g,''),+$('first').value,+$('step').value,+$('used').value);
-  }catch(e){pages=[];$('err').style.color='#b42318';$('err').textContent=e;$('codes').innerHTML='';$('pb').style.display=$('pr').style.display='none';return}
+    const firstQty = +$('first_qty').value.replace(/,/g,'');
+    const {usedSheets, startNum} = deriveStartNumber(firstQty);
+    $('start').value = startNum.toLocaleString('en-US');
+
+    pages = plan(startNum, +$('total').value.replace(/,/g,''), +$('first').value, 100, usedSheets);$('err').style.color='#176b70';
+    $('err').textContent = `الأفرخ المستهلكة سابقًا: ${usedSheets.toLocaleString('en-US')} فرخ | رقم البداية المحسوب: ${startNum.toLocaleString('en-US')}`;
+  }catch(e){
+    pages=[];$('err').style.color='#b42318';$('err').textContent=e;$('codes').innerHTML='';$('pb').style.display=$('pr').style.display='none';return
+  }
+
   const old=[...document.querySelectorAll('#codes input')].map(i=>i.value),d=new Date();
   const def=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
-  if(+$('used').value>0){
-    $('err').style.color='#176b70';
-    $('err').textContent='سيتم استكمال السريال الأول من الفرخ '+(+$('used').value+1).toLocaleString('en-US')+'، والمتبقي فيه '+(SS-+$('used').value).toLocaleString('en-US')+' فرخ.';
-  } else {$('err').textContent='';$('err').style.color='';}
+
   $('codes').innerHTML=pages.map((p,i)=>`<div>سريال هـ \\ ${p.serial} — ${p.qty.toLocaleString('en-US')} فرخ — الكودي: <input value="${old[i]||def}"></div>`).join('')
     +`<div><b>الإجمالي: ${pages.reduce((a,p)=>a+p.qty,0).toLocaleString('en-US')} فرخ — ${pages.length} صفحة</b></div>`;
   $('pb').style.display=$('pr').style.display='inline-block'}
+
 function cover(crew,c0,order,denom){
   const pile=c0.m,st=c0.top;let g='';
   for(let r=0;r<9;r++){g+='<tr>';for(let c=0;c<4;c++)g+=`<td class="${c==0?'b':'l'}">${st+pile*(r*4+c)}</td>`;g+='</tr>'}
   return `<div class="page"><table class="cv"><tr class="h"><td>الامر رقم</td><td>${order}</td><td>فئة</td><td>${denom}</td></tr>
   <tr><td class="b">البداية</td><td class="l">${st.toLocaleString('en-US')}</td><td class="l">عدد الافرخ</td><td class="l">${pile}</td></tr>${g}
   ${crew?`<tr><td class="b">البداية للالة</td><td class="l">${st}</td><td class="l">النهاية للالة</td><td class="l">${c0.bottom}</td></tr>`:''}</table></div>`}
+
 function slot(c,cs,L,last,crew,end){
   if(!c)return '<td></td><td></td><td></td><td></td><td></td>';
   const blank='<td></td><td></td>';
@@ -114,6 +130,7 @@ function slot(c,cs,L,last,crew,end){
   if(!i)return blank+'<td></td><td></td><td></td>';
   const lab=i.m<CS?`<td class="red">${i.m}<br>فرخ<br>معيب</td>`:'<td></td>';
   return blank+lab+`<td><span class="g">${fmt(i.top)}</span>${fmt(i.bottom)}</td><td class="n">${c}</td>`}
+
 function sheet(p,code,order,denom,crew,isLast){
   const cs=carts(p.first,p.last),L=Math.max(...Object.keys(cs).map(Number)),done=p.last==SS;
   const h2=crew?'<th class="c">تسليم</th><th class="c">طباعة</th>':'<th class="c" colspan="2">عربة</th>';
@@ -128,6 +145,7 @@ function sheet(p,code,order,denom,crew,isLast){
   <table class="t"><colgroup>${'<col><col><col><col style="width:27mm"><col style="width:8mm">'.repeat(3)}</colgroup>
   <tr>${hg}${hg}${hg}</tr>${rows}</table>
   <div class="ft"><span>الكمية المطبوعة من السريال: ${p.qty.toLocaleString('en-US')}</span><span>${crew?'طاقم الماكينة':'تسجيل العربات'}</span><span class="red" style="font-size:17pt">${note}</span></div></div>`}
+
 function build(){
   calc();if(!pages.length)return false;
   const codes=[...document.querySelectorAll('#codes input')].map(i=>i.value.trim());
@@ -142,14 +160,17 @@ function build(){
   $('out').innerHTML=h;
   return true;
 }
+
 function showPages(){
   if(build()) $('out').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
 function printPages(){
   if(!build())return;
   $('out').scrollIntoView({block:'start'});
   requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
 }
+
 calc();
 </script>
 </body>
