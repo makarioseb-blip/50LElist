@@ -2,65 +2,141 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>طباعة أوراق الأمر</title>
 <style>
 @page{size:A4 landscape;margin:8mm}
+:root{
+  --navy:#0f2f4a;--teal:#12787a;--teal-d:#0c5658;--mint:#d9f0ec;--ink:#17283b;
+  --line:#d6e0ea;--bg:#eef3f8;--card:#fff;--red:#b42318;--green:#087f5b;
+}
 *{box-sizing:border-box}
-body{font-family:Tahoma,Arial,sans-serif;margin:0;background:#edf2f7;color:#172b4d}
-#ui{background:#fff;padding:20px;max-width:900px;margin:18px auto;border:1px solid #d7e0ea;border-radius:14px;box-shadow:0 8px 26px #17365d18}
-#ui h3{margin:0 0 16px;padding:14px 16px;background:linear-gradient(110deg,#123b5d,#176b70);color:#fff;border-radius:10px}
-#ui label{display:inline-block;margin:7px 10px;font-weight:600;color:#28445e}
-#ui input,#ui select{padding:9px;width:170px;border:1px solid #bdcbd8;border-radius:7px;background:#fbfdff;color:#172b4d}
-#ui input:focus,#ui select:focus{outline:2px solid #5bb8b0;border-color:#258b86}
-#ui button{border:0;border-radius:8px;background:#176b70;color:#fff;font-weight:bold;padding:10px 18px;box-shadow:0 3px 8px #123b5d20}
-#ui button:hover{background:#123b5d}
-#err{padding:6px 0}
-#ui label{display:inline-block;margin:4px 10px}
-#ui input,#ui select{padding:4px;width:150px}
-#codes div{margin:3px 0}#codes input{width:110px;text-align:center}
-button{padding:7px 16px;margin:6px;font-size:15px;cursor:pointer}
-#err{color:#c00;font-weight:bold}
-.page{background:#fff;width:281mm;height:193mm;margin:10px auto;padding:2mm;border:1px solid #cbd5df;box-shadow:0 5px 20px #17365d18;page-break-after:always;overflow:hidden}
+body{font-family:Tahoma,"Segoe UI",Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+
+/* ======== واجهة البرنامج ======== */
+#ui{max-width:1000px;margin:20px auto;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px #0f2f4a1c;overflow:hidden}
+.top{display:flex;align-items:center;gap:14px;padding:18px 24px;background:linear-gradient(110deg,var(--navy),var(--teal));color:#fff}
+.top .ic{width:44px;height:44px;border-radius:12px;background:#ffffff26;display:grid;place-items:center;font-size:24px}
+.top h1{margin:0;font-size:19px}
+.top p{margin:3px 0 0;font-size:13px;opacity:.85}
+.body{padding:22px 24px}
+.sec{font-size:13px;font-weight:bold;color:var(--teal-d);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.sec:after{content:"";flex:1;height:1px;background:var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:13px;font-weight:600;color:#2b4760}
+.f input,.f select{width:100%;padding:10px 12px;border:1px solid #bccbda;border-radius:9px;background:#fbfdff;color:var(--ink);font-size:14px;font-family:inherit}
+.f input:focus,.f select:focus{outline:3px solid #12787a30;border-color:var(--teal)}
+.f input[readonly]{background:#eef4f8;font-weight:bold;color:var(--navy)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 4px}
+button{font-family:inherit;font-size:14px;font-weight:bold;border:0;border-radius:10px;padding:11px 22px;cursor:pointer;transition:.15s}
+.b1{background:var(--teal);color:#fff;box-shadow:0 3px 8px #12787a40}
+.b1:hover{background:var(--teal-d)}
+.b2{background:#e3edf5;color:var(--navy)}
+.b2:hover{background:#d2e1ee}
+.b3{background:var(--navy);color:#fff}
+.b3:hover{background:#0a2236}
+#err{margin:14px 0 0;padding:10px 14px;border-radius:10px;font-weight:bold;font-size:13.5px;display:none}
+#err.ok{display:block;background:#e3f5ef;color:var(--green);border:1px solid #b7e2d4}
+#err.bad{display:block;background:#fdeceb;color:var(--red);border:1px solid #f5c6c2}
+#codes{margin-top:18px}
+#codes .row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 14px;margin-bottom:8px;border:1px solid var(--line);border-radius:10px;background:#f8fbfd;font-size:13.5px}
+#codes .row b{color:var(--navy)}
+#codes .row .tag{background:var(--mint);color:var(--teal-d);padding:3px 10px;border-radius:20px;font-weight:bold;font-size:12.5px}
+#codes .row input{width:120px;margin-inline-start:auto;padding:7px;text-align:center;border:1px solid #bccbda;border-radius:8px;font-family:inherit}
+#codes .tot{padding:10px 14px;border-radius:10px;background:var(--navy);color:#fff;font-weight:bold;font-size:14px}
+#viewbar{display:none;max-width:1000px;margin:0 auto 10px;padding:0 4px;align-items:center;gap:10px;font-size:13px;color:#2b4760}
+#viewbar select{padding:6px 10px;border-radius:8px;border:1px solid #bccbda;font-family:inherit}
+#out{overflow:auto;padding:4px 10px 30px}
+
+/* ======== الأوراق ======== */
+.page{background:#fff;width:281mm;height:193mm;margin:12px auto;padding:3mm;border:1px solid #c3d0dc;box-shadow:0 6px 22px #0f2f4a20;page-break-after:always;overflow:hidden;display:flex;flex-direction:column}
 .page:last-child{page-break-after:auto}
-.hd{display:flex;justify-content:space-between;font-weight:bold;font-size:14pt;margin:0 0 3mm}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:6mm;font-weight:bold;font-size:13.5pt;margin:0 0 3mm;padding:1.5mm 3mm;background:#e6eff6;border:1px solid #9aaebe;border-radius:2mm;white-space:nowrap;flex:none}
 table{border-collapse:collapse;width:100%}
-.t{direction:ltr;table-layout:fixed}
-.t td,.t th{border:1px solid #9aaebe;text-align:center;font-size:10pt;padding:1px}
-.t th{background:#dce8f2;color:#173b5e;height:13mm;font-size:9.5pt}
+.t{direction:ltr;table-layout:fixed;flex:none}
+.t td,.t th{border:1px solid #8ea4b6;text-align:center;font-size:10pt;padding:1px;overflow:hidden}
+.t th{background:#dce8f2;color:#173b5e;height:11mm;font-size:9.5pt}
 .t th.c{background:#d8eee8}.t th.s{background:#e8e5f5}
 .t td{height:14.5mm;font-weight:bold;background:#fff}
-.t td.n{background:#e5edf4;color:#173b5e;font-size:10pt;width:7mm}
-.g{color:#087f5b;display:block}.red{color:#b42318;font-size:10.5pt;line-height:1.1;font-weight:bold}
-.gr{background:#edf3f8}
-.ft{display:flex;justify-content:space-between;font-size:17pt;font-weight:bold;margin-top:5mm}
+.p11 .t td{height:12.8mm}
+.t td.n{background:#e5edf4;color:#173b5e;font-size:10.5pt}
+.g{color:#087f5b;display:block}
+.red{color:#b42318;font-size:9.5pt;line-height:1.15;font-weight:bold}
+.ft{display:flex;justify-content:space-between;align-items:center;gap:6mm;font-size:14pt;font-weight:bold;margin-top:auto;padding-top:3mm;white-space:nowrap;flex:none}
+.ft .red{font-size:14pt}
 .cv{direction:rtl;table-layout:fixed}
-.cv td{border:1px solid #9aaebe;text-align:center;height:13mm;font-size:13pt}
-.cv .b{background:#176b70;color:#fff;font-weight:bold}.cv .l{background:#e5f0f4}
-.cv td:first-child{font-weight:bold}.cv .h td{background:#123b5d;color:#fff;height:22mm}
-@media print{html,body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important}#ui{display:none!important}#out{display:block!important}.page{width:281mm;height:193mm;margin:0;padding:2mm;border:0;box-shadow:none;break-after:page;page-break-after:always;overflow:hidden}.page:last-child{break-after:auto;page-break-after:auto}.t th,.t td,.cv td{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+.cv td{border:1px solid #8ea4b6;text-align:center;height:13mm;font-size:13pt}
+.cv .b{background:#12787a;color:#fff;font-weight:bold}.cv .l{background:#e5f0f4}
+.cv td:first-child{font-weight:bold}.cv .h td{background:#0f2f4a;color:#fff;height:20mm}
+
+@media print{
+  html,body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important}
+  #ui,#viewbar{display:none!important}
+  #out{display:block!important;zoom:1!important;padding:0!important;overflow:visible!important}
+  .page{width:281mm;height:193mm;margin:0;padding:3mm;border:0;box-shadow:none;break-after:page;page-break-after:always}
+  .page:last-child{break-after:auto;page-break-after:auto}
+  .t th,.t td,.cv td,.hd,.cv .b,.cv .l,.cv .h td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
 <div id="ui">
-<h3>طباعة أوراق الأمر (تسجيل العربات / طاقم الماكينة)</h3>
-<label>رقم الأمر <input id="order" value="1/6029"></label>
-<label>الفئة 
-  <select id="denom" onchange="onDenomChange()">
-    <option value="50">50 جنيه</option>
-    <option value="200">200 جنيه</option>
+  <div class="top">
+    <div class="ic">🖨</div>
+    <div>
+      <h1>طباعة أوراق الأمر</h1>
+      <p>تسجيل العربات / طاقم الماكينة</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="sec">بيانات الأمر</div>
+    <div class="grid">
+      <div class="f"><label>رقم الأمر</label><input id="order" value="1/6029"></div>
+      <div class="f"><label>الفئة</label>
+        <select id="denom" onchange="onDenomChange()">
+          <option value="50">50 جنيه</option>
+          <option value="200">200 جنيه</option>
+        </select>
+      </div>
+      <div class="f"><label>الملف</label>
+        <select id="kind" onchange="calc()">
+          <option value="carts">تسجيل العربات</option>
+          <option value="crew">طاقم الماكينة</option>
+          <option value="both">الاثنان</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sec">الكميات والسريال</div>
+    <div class="grid">
+      <div class="f"><label>الكمية المطلوبة من أول سريال</label><input id="first_qty" type="number" value="30850" min="1" oninput="calc()"></div>
+      <div class="f"><label>رقم البداية المحسوب</label><input id="start" value="" readonly></div>
+      <div class="f"><label>إجمالي الأفرخ (حد أقصى 1,200,000)</label><input id="total" value="1200000" oninput="calc()"></div>
+      <div class="f"><label>أول سريال</label><input id="first" value="495" oninput="calc()"></div>
+    </div>
+
+    <div class="actions">
+      <button class="b1" onclick="calc()">حساب السريالات</button>
+      <button class="b2" id="pb" onclick="showPages()" style="display:none">عرض الأوراق</button>
+      <button class="b3" id="pr" onclick="printPages()" style="display:none">طباعة</button>
+    </div>
+    <div id="err"></div>
+    <div id="codes"></div>
+  </div>
+</div>
+
+<div id="viewbar">
+  <span>حجم العرض:</span>
+  <select id="zoom" onchange="applyZoom()">
+    <option value="1">100%</option>
+    <option value="0.8">80%</option>
+    <option value="0.65">65%</option>
+    <option value="0.5">50%</option>
   </select>
-</label>
-<label>الكمية المطلوبة من أول سريال <input id="first_qty" type="number" value="30850" min="1" oninput="calc()"></label>
-<label>رقم البداية المحسوب <input id="start" value="" readonly style="background:#f0f4f8;font-weight:bold;"></label>
-<label>إجمالي الأفرخ (حد أقصى 1,200,000) <input id="total" value="1200000" oninput="calc()"></label>
-<label>أول سريال <input id="first" value="495" oninput="calc()"></label>
-<label>الملف <select id="kind" onchange="calc()"><option value="carts">تسجيل العربات</option><option value="crew">طاقم الماكينة</option><option value="both">الاثنان</option></select></label>
-<div><button onclick="calc()">حساب السريالات</button></div>
-<div id="err"></div><div id="codes"></div>
-<button id="pb" onclick="showPages()" style="display:none">عرض الأوراق</button>
-<button id="pr" onclick="printPages()" style="display:none">طباعة</button>
 </div>
 <div id="out"></div>
+
 <script>
 const CONFIG = {
   "50": { N: 36, SS: 277778, CS: 10000, maxCarts: 28, text: "50 جنيه", prefix: "هـ" },
@@ -77,8 +153,7 @@ function getCfg(){
 function onDenomChange(){
   const cfg = getCfg();
   $('first_qty').max = cfg.SS;
-  if(+$('first_qty').value > cfg.SS){$('first_qty').value = cfg.SS;
-  }
+  if(+$('first_qty').value > cfg.SS){ $('first_qty').value = cfg.SS; }
   calc();
 }
 
@@ -125,26 +200,32 @@ function carts(first, last, cfg){
 }
 
 let pages = [];
+function setMsg(t, ok){
+  const e = $('err');
+  e.className = t ? (ok ? 'ok' : 'bad') : '';
+  e.textContent = t;
+}
+
 function calc(){
-  $('err').textContent = '';
+  setMsg('');
   const cfg = getCfg();
   try{
-    const firstQty = +$('first_qty').value.replace(/,/g,'');
+    const firstQty = +String($('first_qty').value).replace(/,/g,'');
     const {usedSheets, startNum} = deriveStartNumber(firstQty, cfg);
     $('start').value = startNum.toLocaleString('en-US');
 
-    pages = plan(startNum, +$('total').value.replace(/,/g,''), +$('first').value, 100, usedSheets, cfg);$('err').style.color = '#176b70';
-    $('err').textContent = `الأفرخ المستهلكة سابقًا: ${usedSheets.toLocaleString('en-US')} فرخ | رقم البداية المحسوب: ${startNum.toLocaleString('en-US')}`;
+    pages = plan(startNum, +String($('total').value).replace(/,/g,''), +$('first').value, 100, usedSheets, cfg);
+    setMsg(`الأفرخ المستهلكة سابقًا: ${usedSheets.toLocaleString('en-US')} فرخ  |  رقم البداية المحسوب: ${startNum.toLocaleString('en-US')}`, true);
   }catch(e){
-    pages = []; $('err').style.color = '#b42318'; $('err').textContent = e; $('codes').innerHTML = ''; $('pb').style.display =$('pr').style.display = 'none'; return;
+    pages = []; setMsg(String(e), false); $('codes').innerHTML = ''; $('pb').style.display = $('pr').style.display = 'none'; return;
   }
 
   const old = [...document.querySelectorAll('#codes input')].map(i => i.value), d = new Date();
   const def = d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
 
-  $('codes').innerHTML = pages.map((p, i) => `<div>سريال ${cfg.prefix} \\ ${p.serial} — ${p.qty.toLocaleString('en-US')} فرخ — الكودي: <input value="${old[i] || def}"></div>`).join('')
-    + `<div><b>الإجمالي: ${pages.reduce((a, p) => a + p.qty, 0).toLocaleString('en-US')} فرخ — ${pages.length} صفحة</b></div>`;
-  $('pb').style.display =$('pr').style.display = 'inline-block';
+  $('codes').innerHTML = pages.map((p, i) => `<div class="row"><b>سريال ${cfg.prefix} \\ ${p.serial}</b><span class="tag">${p.qty.toLocaleString('en-US')} فرخ</span><span>الكودي:</span><input value="${old[i] || def}"></div>`).join('')
+    + `<div class="tot">الإجمالي: ${pages.reduce((a, p) => a + p.qty, 0).toLocaleString('en-US')} فرخ — ${pages.length} صفحة</div>`;
+  $('pb').style.display = $('pr').style.display = 'inline-block';
 }
 
 function cover(crew, c0, order, denomText){
@@ -161,7 +242,7 @@ function slot(c, cs, L, last, crew, end, cfg){
   if(end && c == L + 1) return blank + `<td colspan="3" class="red">نهاية الأمر<br>${(last * cfg.N).toLocaleString('en-US')}</td>`;
   const i = cs[c];
   if(!i) return blank + '<td></td><td></td><td></td>';
-  const lab = i.m < cfg.CS ? `<td class="red">${i.m}<br>فرخ<br>معيب</td>` : '<td></td>';
+  const lab = i.m < cfg.CS ? `<td class="red">${i.m}<br>فرخ معيب</td>` : '<td></td>';
   return blank + lab + `<td><span class="g">${fmt(i.top)}</span>${fmt(i.bottom)}</td><td class="n">${c}</td>`;
 }
 
@@ -178,46 +259,52 @@ function sheet(p, code, order, denomText, crew, isLast){
       rows += '<tr>' + slot(a, cs, L, p.last, crew, isLast, cfg) + slot(b, cs, L, p.last, crew, isLast, cfg) + slot(c, cs, L, p.last, crew, isLast, cfg) + '</tr>';
     }
   } else {
+    // 200 جنيه: ترتيب من الأعلى للأسفل في كل عمود
+    // العمود الأيمن 1-11 ، الأوسط 12-22 ، الأيسر 23-32
     for(let r = 1; r <= 11; r++){
-      const c1 = (r - 1) * 3 + 1 <= 32 ? (r - 1) * 3 + 1 : 0;
-      const c2 = (r - 1) * 3 + 2 <= 32 ? (r - 1) * 3 + 2 : 0;
-      const c3 = (r - 1) * 3 + 3 <= 32 ? (r - 1) * 3 + 3 : 0;
-      rows += '<tr>' + slot(c3, cs, L, p.last, crew, isLast, cfg) + slot(c2, cs, L, p.last, crew, isLast, cfg) + slot(c1, cs, L, p.last, crew, isLast, cfg) + '</tr>';
+      const right = r;
+      const mid = 11 + r;
+      const left = 22 + r <= cfg.maxCarts ? 22 + r : 0;
+      rows += '<tr>' + slot(left, cs, L, p.last, crew, isLast, cfg) + slot(mid, cs, L, p.last, crew, isLast, cfg) + slot(right, cs, L, p.last, crew, isLast, cfg) + '</tr>';
     }
   }
 
   const strikeVal = cfg.SS * cfg.N - 10000000 + 1;
   let note = done ? `* يتم شطب عدد ${strikeVal} وحدات` : '';
   if(isLast && L == cfg.maxCarts) note = `نهاية الأمر ${(p.last * cfg.N).toLocaleString('en-US')}`;
-  return `<div class="page"><div class="hd"><span>السريال :- ${cfg.prefix} \\ ${p.serial}</span><span>الكودي: - ${code}</span><span>رقم الأمر: - ${order}</span><span>الفئة: - ${denomText}</span></div>
+  const cls = cfg.maxCarts === 32 ? 'page p11' : 'page';
+  return `<div class="${cls}"><div class="hd"><span>السريال :- ${cfg.prefix} \\ ${p.serial}</span><span>الكودي: - ${code}</span><span>رقم الأمر: - ${order}</span><span>الفئة: - ${denomText}</span></div>
   <table class="t"><colgroup>${'<col><col><col><col style="width:27mm"><col style="width:8mm">'.repeat(3)}</colgroup>
   <tr>${hg}${hg}${hg}</tr>${rows}</table>
-  <div class="ft"><span>الكمية المطبوعة من السريال: ${p.qty.toLocaleString('en-US')}</span><span>${crew ? 'طاقم الماكينة' : 'تسجيل العربات'}</span><span class="red" style="font-size:17pt">${note}</span></div></div>`;
+  <div class="ft"><span>الكمية المطبوعة من السريال: ${p.qty.toLocaleString('en-US')}</span><span>${crew ? 'طاقم الماكينة' : 'تسجيل العربات'}</span><span class="red">${note}</span></div></div>`;
 }
 
 function build(){
   calc(); if(!pages.length) return false;
   const codes = [...document.querySelectorAll('#codes input')].map(i => i.value.trim());
-  if(codes.length !== pages.length || codes.some(c => !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(c))){ $('err').style.color = '#b42318'; $('err').textContent = 'صيغة الكودي يجب أن تكون مثل 22/9/2026'; return false; }
-  const order = $('order').value.trim(), cfg = getCfg(), k =$('kind').value;
+  if(codes.length !== pages.length || codes.some(c => !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(c))){ setMsg('صيغة الكودي يجب أن تكون مثل 22/9/2026', false); return false; }
+  const order = $('order').value.trim(), cfg = getCfg(), k = $('kind').value;
   const c0 = carts(pages[0].first, pages[0].last, cfg); const c00 = c0[Math.min(...Object.keys(c0).map(Number))];
-  if(!c00){ $('err').style.color = '#b42318'; $('err').textContent = 'تعذر تكوين الغلاف؛ راجع رقم البداية والكمية.'; return false; }
+  if(!c00){ setMsg('تعذر تكوين الغلاف؛ راجع رقم البداية والكمية.', false); return false; }
   let h = '';
   for(const crew of k == 'both' ? [false, true] : [k == 'crew']){
     h += cover(crew, c00, order, cfg.text);
     pages.forEach((p, i) => h += sheet(p, codes[i], order, cfg.text, crew, i == pages.length - 1));
   }
   $('out').innerHTML = h;
+  $('viewbar').style.display = 'flex';
+  applyZoom();
   return true;
 }
 
+function applyZoom(){ $('out').style.zoom = $('zoom').value; }
+
 function showPages(){
-  if(build()) $('out').scrollIntoView({behavior: 'smooth', block: 'start'});
+  if(build()) $('viewbar').scrollIntoView({behavior: 'smooth', block: 'start'});
 }
 
 function printPages(){
   if(!build()) return;
-  $('out').scrollIntoView({block: 'start'});
   requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
 }
 
